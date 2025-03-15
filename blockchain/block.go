@@ -42,7 +42,7 @@ func (b *Block) Serialize() []byte {
 	return res.Bytes()
 }
 
-func (b *Block) Deserialize(data []byte) *Block {
+func Deserialize(data []byte) *Block {
 	var block Block
 	decoder := gob.NewDecoder(bytes.NewReader(data))
 	if err := decoder.Decode(&block); err != nil {
