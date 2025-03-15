@@ -19,7 +19,7 @@ type Block struct {
 func CreateBlock(data string, prevHash []byte) (b *Block) {
 	b = &Block{
 		Hash:      []byte{},
-		Data:      []byte{},
+		Data:      []byte(data),
 		PrevHash:  prevHash,
 		Nonce:     0,
 		Timestamp: time.Now().Unix(),
