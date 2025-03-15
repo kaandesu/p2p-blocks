@@ -7,8 +7,8 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -o p2p-blocks .
+RUN go build -o p2pBlocks .
 
 EXPOSE 3000 
 
-CMD ["./p2p-blocks", "--apex"]
+CMD ["./p2pBlocks", "--apex"]
