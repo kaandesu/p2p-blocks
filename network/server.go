@@ -57,7 +57,7 @@ func NewServer(addr string, apex bool, chain *blockchain.BlockChain) *Server {
 
 const (
 	ListenAnyAddr = "0.0.0.0:3000"
-	ApexAddr      = "p2p.yieldsoftomorrow.world:3000"
+	ApexAddr      = "network.yieldsoftomorrow.world:3000"
 	AuxAddr       = "127.0.0.1:"
 )
 
