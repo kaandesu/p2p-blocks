@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
+	"log"
 	"log/slog"
 	"math"
 	"math/big"
@@ -65,4 +66,10 @@ func ToHex(num int64) []byte {
 		slog.Error("could not convert ToHex", "err", err)
 	}
 	return buf.Bytes()
+}
+
+func Handle(e error) {
+	if e != nil {
+		log.Panic(e)
+	}
 }

@@ -1,13 +1,13 @@
 package blockchain
 
 import (
-	"log/slog"
+	"fmt"
 
 	"github.com/dgraph-io/badger"
 )
 
 const (
-	dbPath = "./chainDB"
+	dbPath = "./tmp/blocks"
 )
 
 type BlockChain struct {
@@ -15,7 +15,7 @@ type BlockChain struct {
 	LastHash []byte
 }
 
-type BlockChainiterator struct {
+type BlockChainIterator struct {
 	Database    *badger.DB
 	CurrentHash []byte
 }
@@ -24,34 +24,34 @@ func InitBlockChain() *BlockChain {
 	var lastHash []byte
 
 	opts := badger.DefaultOptions(dbPath)
+
 	db, err := badger.Open(opts)
-	if err != nil {
-		slog.Error("could not open the badger db", "err", err)
-	}
+	Handle(err)
 
 	err = db.Update(func(txn *badger.Txn) error {
 		if _, err := txn.Get([]byte("lh")); err == badger.ErrKeyNotFound {
-			slog.Info("no existing blockchain found")
+			fmt.Println("no existing blockchain found")
 			genesis := Genesis()
-			slog.Info("Genesys block proved")
+			fmt.Println("Genesys proved")
 			err = txn.Set(genesis.Hash, genesis.Serialize())
+			Handle(err)
+			err = txn.Set([]byte("lh"), genesis.Hash)
+
 			lastHash = genesis.Hash
+
 			return err
 		} else {
 			item, err := txn.Get([]byte("lh"))
-			if err != nil {
-				slog.Error("getting lh failed", "err", err)
-			}
+			Handle(err)
 			err = item.Value(func(val []byte) error {
-				lastHash = append(lastHash, val...)
+				lastHash = append([]byte{}, val...)
 				return nil
 			})
 			return err
 		}
 	})
-	if err != nil {
-		slog.Error("could not update the database", "error", err)
-	}
+
+	Handle(err)
 
 	blockchain := BlockChain{LastHash: lastHash, Database: db}
 
@@ -63,60 +63,48 @@ func (chain *BlockChain) AddBlock(data string) {
 
 	err := chain.Database.View(func(txn *badger.Txn) error {
 		item, err := txn.Get([]byte("lh"))
-		if err != nil {
-			slog.Error("can't get lh item", "err", err)
-		}
+		Handle(err)
 		err = item.Value(func(val []byte) error {
-			lastHash = append(lastHash, val...)
+			lastHash = append([]byte{}, val...)
 			return nil
 		})
 
 		return err
 	})
-	if err != nil {
-		slog.Error("[AddBlock] cant view databse", "err", err)
-	}
+
+	Handle(err)
 
 	newBlock := CreateBlock(data, lastHash)
 
 	err = chain.Database.Update(func(txn *badger.Txn) error {
-		err = txn.Set([]byte("lh"), newBlock.Serialize())
-		if err != nil {
-			slog.Error("[AddBlock] can't Serialize", "err", err)
-		}
+		err = txn.Set(newBlock.Hash, newBlock.Serialize())
+		Handle(err)
 		err = txn.Set([]byte("lh"), newBlock.Hash)
+
+		chain.LastHash = newBlock.Hash
 		return err
 	})
-	if err != nil {
-		slog.Error("[AddBlock] could not update the database", "err", err)
-	}
+	Handle(err)
 }
 
-func (chain *BlockChain) Iterator() *BlockChainiterator {
-	return &BlockChainiterator{
-		CurrentHash: chain.LastHash,
-		Database:    chain.Database,
-	}
+func (chain *BlockChain) Iterator() *BlockChainIterator {
+	return &BlockChainIterator{CurrentHash: chain.LastHash, Database: chain.Database}
 }
 
-func (iter *BlockChainiterator) Next() *Block {
+func (iter *BlockChainIterator) Next() *Block {
 	var block *Block
 	var encodedBlock []byte
 	err := iter.Database.View(func(txn *badger.Txn) error {
 		item, err := txn.Get(iter.CurrentHash)
-		if err != nil {
-			slog.Error("[Next] could not get the current item", "err", err)
-		}
+		Handle(err)
 		err = item.Value(func(val []byte) error {
-			encodedBlock = append(encodedBlock, val...)
+			encodedBlock = append([]byte{}, val...)
 			return nil
 		})
 		block = Deserialize(encodedBlock)
 		return err
 	})
-	if err != nil {
-		slog.Error("[Next] Could not view the database", "err", err)
-	}
+	Handle(err)
 
 	iter.CurrentHash = block.PrevHash
 

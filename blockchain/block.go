@@ -3,6 +3,7 @@ package blockchain
 import (
 	"bytes"
 	"encoding/gob"
+	"log"
 	"log/slog"
 	"time"
 )
@@ -36,8 +37,8 @@ func Genesis() *Block {
 func (b *Block) Serialize() []byte {
 	var res bytes.Buffer
 	encoder := gob.NewEncoder(&res)
-	if err := encoder.Encode(res); err != nil {
-		slog.Error("couldt not Serialize the block", "ERR", err)
+	if err := encoder.Encode(b); err != nil {
+		log.Panic(err)
 	}
 	return res.Bytes()
 }
